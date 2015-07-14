@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" http-equiv="Access-Control-Allow-Origin" content="*">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<title>ArchSensor Dashboard</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta name="Description" lang="en" content="Archsensor Dashboard">
+		<meta name="author" content="fom">
+		<meta name="robots" content="index, follow">
+
+		<!-- icons -->		
+		<link rel="shortcut icon" href="favicon.ico">
+
+		<!-- Bootstrap Core CSS file -->
+		<link rel="stylesheet" href="css/bootstrap.min.css">
+
+		<!-- Override CSS file - add your own CSS rules -->
+		<link rel="stylesheet" href="css/styles.css">
+
+		<!-- JQuery scripts -->
+		<script src="js/modules/jquery.min.js" type="text/javascript"></script>
+	    <script src="js/modules/jquery-1.11.2.min.js" type="text/javascript"></script>
+	    <script src="js/modules/require.js" type="text/javascript"></script>	    
+		<script src="js/modules/bootstrap.min.js" type="text/javascript"></script>
+		<script src="js/modules/mqttws31.js" type="text/javascript"></script>
+		<script src="js/modules/highcharts.js" type="text/javascript"></script>
+		<script src="js/modules/exporting.js"></script>
+
+		<script src="js/config.js" type="text/javascript"></script>
+		<script src="js/environmenthandler.js" type="text/javascript"></script>
+		<script src="js/mqtthandler.js" type="text/javascript"></script>
+		<script src="js/rt-linechart.js" type="text/javascript"></script>
+		<script src="js/rt-rategraph.js" type="text/javascript"></script>
+		<script src="js/noderedhandler.js" type="text/javascript"></script>
+		<script src="js/topic-tree.js" type="text/javascript"></script>
+		<script src="js/widget1.js" type="text/javascript"></script>
+
+
+		<!-- init popover for topic map -->
+		<script type="text/javascript">
+			$(document).ready(function(){
+				$('[data-toggle="popover"]').popover();   
+				$('#popoverOption').popover({
+					trigger: "hover",
+					container : 'body'
+				});
+			});
+		</script>
+
+	</head>
+	<body>
+		<!-- Navigation -->
+	    <nav class="navbar navbar-fixed-top navbar-inverse" role="navigation">
+			<div class="container-fluid">
+				<!-- Brand and toggle get grouped for better mobile display -->
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+						<span class="sr-only">Toggle navigation</span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+					<a class="navbar-brand" href="#">ArchSensor Dashboard</a>
+				</div>
+				<!-- /.navbar-header -->
+				<!-- Collect the nav links, forms, and other content for toggling -->
+				<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+					<ul class="nav navbar-nav">			
+						<li><a id="treemap" href="tree-map.html" onclick="displayTopics();" data-trigger="hover" data-toggle="popover" target="blank" data-content="Open a new tab with a visualization of the topic tree">Topic tree map</a></li>
+						<li><a href="#"  onclick="startnodered()" data-toggle="popover" data-trigger="hover" data-content="Open Node RED to interact with the data directly">Start node red</a></li>
+					</ul>
+				</div>
+				<!-- /.navbar-collapse -->
+			</div>
+			<!-- /.container-fluid -->
+		</nav>
+		<!-- /.navbar -->
+		<!-- Page Content -->
+		<div class="container-fluid">
+			<div class="row">
+				<div class="col-sm-9 col-sm-push-3">
+					<div class="page-header">
+						<script type="text/javascript">
+
+
+						</script>
+						<div id="plot-title"></div>
+						
+					</div>
+				</div>
+			</div>
+			<!-- /.row -->
+
+			<div class="row">
+				<div class="col-sm-9 col-sm-push-3">
+				<div id="plot-area">
+				</div>
+
+					<!-- Comments -->
+					<hr>
+				</div>
+				<div class="col-sm-3 col-sm-pull-9">
+					<!-- Search -->	
+					<div class="well">
+						<h4 class="margin-t-0">Connect to broker</h4>
+						<form action="#">
+							<div class="input-group">
+								<input type="text" class="form-control" id='broker' value="10.13.1.25:8000">
+								<span class="input-group-btn">
+									<button id="connect" data-toggle="popover" data-trigger="hover" data-content="Connect to MQTT broker. It will looking for already available topics." class="btn btn-default" onclick="mqttclientconnect();" type="button">
+										<span class="glyphicon glyphicon-cloud-download"></span>
+									</button>
+								</span>
+							</div>
+						</form>
+					</div>
+					<div class="well">
+						<h4 class="margin-t-0">Enter your topic</h4>
+						<form action="#">
+							<div class="input-group">
+								<input type="text" class="form-control" id='topic'>
+								<span class="input-group-btn">
+									<button id="popoverOption" class="btn btn-default" data-trigger="hover" data-toggle="popover" data-content="Validate your topic entry" onclick="validateTopic()" type="button">
+										<span class="glyphicon glyphicon-search"></span>
+									</button>
+									<button id="popoverOption" class="btn btn-default" data-trigger="hover" data-toggle="popover" data-content="Reset all graphs" onclick="deleteAllPlots()" type="button">
+										<span class="glyphicon glyphicon-refresh"></span>
+									<!--	<span class="sr-only">Reset</span> -->
+									</button>
+								</span>
+							</div>
+						</form>
+					</div>
+
+					<!-- list group -->
+					<div id="topicList" class="list-group margin-b-3"></div>
+
+					<!-- Panel -->
+					<div class="panel panel-default">
+						<div class="panel-heading">
+							<h4 class="panel-title">Message rate per topics</h4>
+						</div>
+						<div class="panel-body" id="messagerate">
+
+						</div>
+					</div>
+
+					<!-- Panel -->
+					<div class="panel panel-default">
+						<div class="panel-heading">
+							<h4 class="panel-title">Sidebar panel widget 2</h4>
+						</div>
+						<div class="panel-body">
+							<p>Widget 2</p>
+						</div>
+					</div>
+
+					<!-- Panel -->
+					<div class="panel panel-default">
+						<div class="panel-heading">
+							<h4 class="panel-title">Sidebar panel widget 3</h4>
+						</div>
+						<div class="panel-body">
+							<p>Widget 3</p>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-lg-12">
+					<div id="nodered">
+					</div>
+				</div>
+			</div>
+			<!-- /.row -->
+
+			<hr>
+			<footer class="margin-tb-3">
+				<div class="row">
+					<div class="col-lg-12">
+						<p>Copyright &copy; ArchSensor Dashboard 2015</p>
+					</div>
+				</div>
+			</footer>
+		</div>
+		<!-- /.container-fluid -->
+	</body>
+</html>
+
